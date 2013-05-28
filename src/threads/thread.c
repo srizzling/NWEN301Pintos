@@ -229,7 +229,12 @@ thread_create (const char *name, int priority,
 	/* Add to run queue. */
 	thread_unblock (t);
 
-	/* Check if the priority of the thread is greater than the current thread priority */
+	/*
+	 * NEW CODE
+	 */
+
+	/* Check if the priority of the thread is greater than the current thread priority if this is true... then swap the
+	 * thread out 4*/
 	if (t->priority > thread_current()->priority)
 	{
 		thread_yield();
@@ -474,12 +479,16 @@ thread_set_priority (int new_priority)
 {
 
 	thread_current ()->priority = new_priority;
+
+
+	//MY CODE
 	struct thread *t= list_entry (list_begin (&ready_list), struct thread, elem);
 
-
-	if (t->priority > thread_current ()->priority){
+	if (t->priority > new_priority){
 		thread_yield();
 	}
+
+
 
 }
 

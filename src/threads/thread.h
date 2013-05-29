@@ -102,6 +102,11 @@ struct thread
     unsigned magic;                     /* Detects stack overflow. */
 
     int64_t wakeup_tick;
+    int donated_priority;
+    bool donated;
+
+    int prev_pri;
+
   };
 
 /* If false (default), use round-robin scheduler.

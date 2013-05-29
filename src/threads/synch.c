@@ -38,6 +38,8 @@ static bool compare_priority (const struct list_elem *a,
 		const struct list_elem *b,
 		void *aux UNUSED);
 
+static bool highest_sema_pri (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+
 /*Compare two list_elem and return true if first elem has greater priority*/
 static bool
 compare_priority(const struct list_elem *a, const struct list_elem *b,
@@ -279,6 +281,12 @@ struct semaphore_elem
   {
     struct list_elem elem;              /* List element. */
     struct semaphore semaphore;         /* This semaphore. */
+
+    /*
+     * MY CODE
+     */
+    int sema_pri; 						/* This is the top's thread priority in the
+    									list of waiters of each semaphore */
   };
 
 /* Initializes condition variable COND.  A condition variable
@@ -288,7 +296,6 @@ void
 cond_init (struct condition *cond)
 {
   ASSERT (cond != NULL);
-
   list_init (&cond->waiters);
 }
 
@@ -323,10 +330,44 @@ cond_wait (struct condition *cond, struct lock *lock)
   ASSERT (lock_held_by_current_thread (lock));
 
   sema_init (&waiter.semaphore, 0);
-  list_push_back (&cond->waiters, &waiter.elem);
+
+
+  /*
+   * MY CODE
+   */
+
+  // Need to set the priority of the semaphore here... (Effectively the top element of waiters list in the
+  //semaphore struct)
+  // After setting the priority of the semaphore sort the semaphores waiters list to reflect the top thread's pri
+
+  waiter.sema_pri=thread_current()->priority;
+  list_insert_ordered(&cond->waiters, &waiter.elem, highest_sema_pri, NULL);
+
+
+  //list_push_back (&cond->waiters, &waiter.elem);
+
+
+
+
+
+
+
   lock_release (lock);
   sema_down (&waiter.semaphore);
   lock_acquire (lock);
+}
+
+static bool highest_sema_pri (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
+{
+  ASSERT(a!=NULL);
+  ASSERT(b!=NULL);
+
+  const struct semaphore_elem *semaA = list_entry(a, struct semaphore_elem,
+                                                  elem);
+  const struct semaphore_elem *semaB = list_entry(b, struct semaphore_elem,
+                                                  elem);
+
+  return (semaA->sema_pri > semaB->sema_pri);
 }
 
 /* If any threads are waiting on COND (protected by LOCK), then
